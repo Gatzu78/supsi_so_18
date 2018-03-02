@@ -4,4 +4,6 @@
 
 int main() {
 
+    printf("All the bases are belong to us");
+
 };
