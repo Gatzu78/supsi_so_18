@@ -32,5 +32,5 @@ int main() {
     } else {
         printf("Now I'm there\n");
     }
-    return 0;
+    return 1;
 }
