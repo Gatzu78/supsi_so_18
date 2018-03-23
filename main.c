@@ -2,27 +2,22 @@
 // Created by Attilio, Antonio, Luciano & Stefano
 //
 
-execution_context thread1_ctx;
-execution_context thread2_ctx;
+#include <setjmp.h>
+#include <stdio.h>
 
-void thread1() {
-    for (int i = 0; i < 10000; i++) {
-        save_context(thread1_ctx);
-        restore_context(thread2_ctx);
-    }
+static jmp_buf buf;
+
+void dothings(){
+    printf("now I'm there\n");
+    sleep(3);
+    longjmp(buf, 32);
+    printf("This is never printed");
 }
-
-void thread2() {
-    for(int i=0; i<10000; i++) {
-        // Do some computation
-        save_context(thread2_ctx);
-        restore_context(thread1_ctx);
+int main() {
+    if(!setjmp(buf)){
+        dothings();
+    } else {
+        printf("now I'm at bottom\n");
     }
-}
-
-void main() {
-    while(1) {
-        thread1();
-        thread2();
-    }
+    return 0;
 }
