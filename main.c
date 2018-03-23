@@ -1,45 +1,166 @@
-//
-// Created by Attilio, Antonio, Luciano & Stefano
-//
-
-#include <stdio.h>
 #include <setjmp.h>
-#include <stdlib.h>
+#include <stdio.h>
 
-/******************************************************************************************
-*********** Signature of the jump functions ***********
-int setjmp(jmp_buf env);
-int sigsetjmp(sigjmp_buf env, int savesigs);
-void longjmp(jmp_buf env, int val);
-void siglongjmp(sigjmp_buf env, int val);
+#define CUSHION_SIZE 10000
+#define save_context(CONTEXT) setjmp(CONTEXT)
+#define restore_context(CONTEXT) longjmp(CONTEXT, 1)
 
-******************************************************************************************/
+typedef enum { __BTHREAD_UNINITIALIZED, __BTHREAD_READY } bthread_state;
+typedef void *(*bthread_routine) (void *);
 
+void create_cushion_and_call(bthread_routine fn, bthread_state* state);
+void* bthread1(void* arg);
+void* bthread2(void* arg);
+void* bthread3(void* arg);
+void* bthread4(void* arg);
 
-static jmp_buf main_buf, dothing_buf;
+jmp_buf bthread1_buf, bthread2_buf, bthread3_buf, bthread4_buf;
+bthread_state bthread1_state = __BTHREAD_UNINITIALIZED;
+bthread_state bthread2_state = __BTHREAD_UNINITIALIZED;
+bthread_state bthread3_state = __BTHREAD_UNINITIALIZED;
+bthread_state bthread4_state = __BTHREAD_UNINITIALIZED;
 
-void dothings() {
-    int z = 1313;
-    if (!setjmp(dothing_buf)) {
-        printf("Now I'm here, z=%d\n", z);
-        longjmp(main_buf, 42);
-    } else {
-        printf("Now I'm back here, z=%d\n", z);
-        exit(0);
+void create_cushion_and_call(bthread_routine fn, bthread_state* state)
+{
+
+    char cushion[CUSHION_SIZE];
+
+    cushion[CUSHION_SIZE-1] = cushion[0];
+
+    *state = __BTHREAD_READY;
+
+    fn(NULL);
+}
+
+void* bthread1(void* arg)
+{
+    const int PRIORITY = 1;             //definisce la priorità sul thread!!!
+
+    volatile int i;
+    volatile int j = 0;
+
+    for(i=0;i<10000;i++) {
+
+        printf("BThread1, i=%d\n", i);
+
+        /* Yield to next bthread */
+
+        if(j++ < PRIORITY){
+            if(j == PRIORITY){
+                j = 0;
+                if (!save_context(bthread1_buf)) {
+
+                    if (bthread2_state == __BTHREAD_UNINITIALIZED) {
+
+                        create_cushion_and_call(bthread2, &bthread2_state);
+
+                    } else {
+
+                        restore_context(bthread2_buf);
+
+                    }
+
+                }
+            }
+        }
     }
 }
 
-void cushion(){
-    char data_cushion[1000];
-    data_cushion[999]=1;
-    dothings();
+void* bthread2(void* arg)
+{
+    const int PRIORITY = 1;
+    volatile int i;
+    volatile int j = 0;
+
+    for(i=0;i<10000;i++) {
+
+        printf("BThread2, i=%d\n", i);
+
+        /* Yield to next bthread */
+        if(j++ < PRIORITY){
+            if(j == PRIORITY){
+                j = 0;
+                if (!save_context(bthread2_buf)) {
+
+                    if (bthread3_state == __BTHREAD_UNINITIALIZED) {
+
+                        create_cushion_and_call(bthread3, &bthread3_state);
+
+                    } else {
+
+                        restore_context(bthread3_buf);
+
+                    }
+
+                }
+            }
+        }
+
+    }
 }
 
-int main() {
-    if (!setjmp(main_buf)) { // the first time returns 0
-        cushion();
-    } else {
-        longjmp(dothing_buf,17);
+void* bthread3(void* arg)
+{
+
+    const int PRIORITY = 1;
+    volatile int i;
+    volatile int j = 0;
+
+    for(i=0;i<10000;i++) {
+
+        printf("BThread3, i=%d\n", i);
+
+        /* Yield to next bthread */
+        if(j++ < PRIORITY) {
+            if (j == PRIORITY) {
+                j = 0;
+                if (!save_context(bthread3_buf)) {
+
+                    if (bthread4_state == __BTHREAD_UNINITIALIZED) {
+
+                        create_cushion_and_call(bthread4, &bthread4_state);
+
+                    } else {
+
+                        restore_context(bthread4_buf);
+
+                    }
+
+                }
+            }
+        }
+
     }
-    return 0;
+}
+
+void* bthread4(void* arg)
+{
+
+    const int PRIORITY = 5;
+    volatile int i;
+    volatile int j = 0;
+
+    for(i=0;i<10000;i++) {
+
+        printf("BThread4, i=%d\n", i);
+
+        /* Yield to next bthread */
+        if(j++ < PRIORITY) {
+            if (j == PRIORITY) {
+                j = 0;
+                if (!save_context(bthread4_buf)) {
+                    // We assume that bthread1 is already initialized
+                    restore_context(bthread1_buf);
+
+                }
+            }
+        }
+
+    }
+}
+
+void main()
+{
+
+    create_cushion_and_call(bthread1, &bthread1_state);
 }
