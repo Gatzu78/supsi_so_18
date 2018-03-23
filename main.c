@@ -29,10 +29,15 @@ void dothings() {
     }
 }
 
+void cushion(){
+    char data_cushion[1000];
+    data_cushion[999]=1;
+    dothings();
+}
 
 int main() {
     if (!setjmp(main_buf)) { // the first time returns 0
-        dothings();
+        cushion();
     } else {
         longjmp(dothing_buf,17);
     }
