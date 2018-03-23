@@ -24,5 +24,6 @@ void main() {
     while(1) {
         thread1();
         thread2();
+        break;
     }
 }
