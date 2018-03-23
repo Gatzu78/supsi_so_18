@@ -2,28 +2,35 @@
 // Created by Attilio, Antonio, Luciano & Stefano
 //
 
-execution_context thread1_ctx;
-execution_context thread2_ctx;
+#include <stdio.h>
+#include <setjmp.h>
+#include <unistd.h>
 
-void thread1() {
-    for (int i = 0; i < 10000; i++) {
-        save_context(thread1_ctx);
-        restore_context(thread2_ctx);
-    }
+/******************************************************************************************
+*********** Signature of the jump functions ***********
+int setjmp(jmp_buf env);
+int sigsetjmp(sigjmp_buf env, int savesigs);
+void longjmp(jmp_buf env, int val);
+void siglongjmp(sigjmp_buf env, int val);
+
+******************************************************************************************/
+
+
+static jmp_buf buf;
+
+void dothings() {
+
+    printf("Now I'm here\n");
+    sleep(3);
+    longjmp(buf, 42);
+    printf("This is never printed\n");
 }
 
-void thread2() {
-    for(int i=0; i<10000; i++) {
-        // Do some computation
-        save_context(thread2_ctx);
-        restore_context(thread1_ctx);
+int main() {
+    if (!setjmp(buf)) { // the first time returns 0
+        dothings();
+    } else {
+        printf("Now I'm there\n");
     }
-}
-
-void main() {
-    while(1) {
-        thread1();
-        thread2();
-        break;
-    }
+    return 0;
 }
