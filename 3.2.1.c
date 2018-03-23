@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <setjmp.h>
-#include <stdlib.h>
+#include <unistd.h>
 
 /******************************************************************************************
 *********** Signature of the jump functions ***********
@@ -16,25 +16,21 @@ void siglongjmp(sigjmp_buf env, int val);
 ******************************************************************************************/
 
 
-static jmp_buf main_buf, dothing_buf;
+static jmp_buf buf;
 
 void dothings() {
-    int z = 1313;
-    if (!setjmp(dothing_buf)) {
-        printf("Now I'm here, z=%d\n", z);
-        longjmp(main_buf, 42);
-    } else {
-        printf("Now I'm back here, z=%d\n", z);
-        exit(0);
-    }
+
+    printf("Now I'm here\n");
+    sleep(3);
+    longjmp(buf, 42);  //ritorna da dove setjump è partito
+    printf("This is never printed\n");
 }
 
-
 int main() {
-    if (!setjmp(main_buf)) { // the first time returns 0
+    if (!setjmp(buf)) { // the first time returns 0
         dothings();
     } else {
-        longjmp(dothing_buf,17);
+        printf("Now I'm there\n");
     }
     return 0;
 }
