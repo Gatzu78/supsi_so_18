@@ -5,8 +5,9 @@
 #define save_context(CONTEXT) setjmp(CONTEXT)
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
 
-typedef enum { __BTHREAD_UNINITIALIZED, __BTHREAD_READY } bthread_state;
-typedef void *(*bthread_routine) (void *);
+///esercizio 4.1
+#include "bthread.h"
+#include "bthread_private.h"
 
 void create_cushion_and_call(bthread_routine fn, bthread_state* state);
 void* bthread1(void* arg);
