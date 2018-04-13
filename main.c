@@ -5,7 +5,11 @@
 #define save_context(CONTEXT) setjmp(CONTEXT)
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
 
-///esercizio 4.1
+///---------------------------------------------------
+///esercizio 4.1 -> continuare dal 4.1.1 pagina 16
+///---------------------------------------------------
+
+
 #include "bthread.h"
 #include "bthread_private.h"
 
