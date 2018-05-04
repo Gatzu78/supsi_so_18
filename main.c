@@ -6,7 +6,7 @@
 #include "bthread.h"
 #include "bthread_private.h"
 ///---------------------------------------------------
-///esercizio 4.1 -> continuare dal 4.1.2 pagina 17
+///esercizio 4.1 -> continuare dal 4.1.2 pagina 18 -> bthread_create!!!
 ///---------------------------------------------------
 
 
