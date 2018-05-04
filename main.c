@@ -6,7 +6,7 @@
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
 
 ///---------------------------------------------------
-///esercizio 4.1 -> continuare dal 4.1.1 pagina 16
+///esercizio 4.1 -> continuare dal 4.1.2 pagina 17
 ///---------------------------------------------------
 
 
