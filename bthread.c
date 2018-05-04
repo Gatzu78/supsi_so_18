@@ -18,7 +18,10 @@ __bthread_scheduler_private *bthread_get_scheduler() {
 }
 
 int bthread_create(bthread_t *bthread, const bthread_attr_t *attr, void *(*start_routine) (void *), void *arg){
-
+    __bthread_private thread = {bthread, start_routine, arg, __BTHREAD_UNINITIALIZED, attr};
+     ///
+     ///continuare da qui
+     ///
 }
 
 int bthread_join(bthread_t bthread, void **retval){
