@@ -1,17 +1,14 @@
 #include <setjmp.h>
 #include <stdio.h>
-
 #define CUSHION_SIZE 10000
 #define save_context(CONTEXT) setjmp(CONTEXT)
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
-
+#include "bthread.h"
+#include "bthread_private.h"
 ///---------------------------------------------------
 ///esercizio 4.1 -> continuare dal 4.1.2 pagina 17
 ///---------------------------------------------------
 
-
-#include "bthread.h"
-#include "bthread_private.h"
 
 void create_cushion_and_call(bthread_routine fn, bthread_state* state);
 void* bthread1(void* arg);
