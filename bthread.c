@@ -10,7 +10,7 @@ int isSchedulerInitialized = 0;
 
 
 __bthread_scheduler_private *bthread_get_scheduler() {
-    if(isSchedulerInitialized){
+    if(!isSchedulerInitialized){
         ourScheduler = malloc(sizeof(__bthread_scheduler_private));
         isSchedulerInitialized = 1;
     }
