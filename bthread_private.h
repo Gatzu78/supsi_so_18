@@ -6,10 +6,15 @@
 #define SUPSI_SO_18_BTHREAD_PRIVATE_H
 
 #include <setjmp.h>
-#include "bthread.h"
 
 typedef enum { __BTHREAD_EXITED = 0, __BTHREAD_ZOMBIE, __BTHREAD_UNINITIALIZED,
     __BTHREAD_READY, __BTHREAD_BLOCKED, __BTHREAD_SLEEPING } bthread_state;
+
+typedef unsigned long int bthread_t;
+
+typedef struct {} bthread_attr_t;
+typedef void *(*bthread_routine) (void *);
+
 
 typedef struct {
     TQueue queue;
