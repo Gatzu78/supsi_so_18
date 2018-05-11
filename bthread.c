@@ -4,12 +4,6 @@
 
 #include "bthread.h"
 
-#define CUSHION_SIZE 10000
-#define save_context(CONTEXT) setjmp(CONTEXT)
-#define restore_context(CONTEXT) longjmp(CONTEXT, 1)
-
-
-
 __bthread_scheduler_private *bthread_get_scheduler() {
     static __bthread_scheduler_private * ourScheduler = NULL;
     if(ourScheduler == NULL){
