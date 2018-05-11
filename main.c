@@ -5,9 +5,14 @@
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
 #include "bthread.h"
 #include "bthread_private.h"
-///---------------------------------------------------
-///esercizio 4.1 -> continuare dal 4.1.2 pagina 18 -> bthread_create!!!
-///---------------------------------------------------
+///----------------------------------------------------------------------------------------------------------------
+///esercizio 4.2 -> continuare dal 4.1.2 pagina 19 -> bthread_yield() e bthread_reap_if_zombie() da completare!!!!
+///----------------------------------------------------------------------------------------------------------------
+
+
+
+
+//test... vecchio
 
 
 void create_cushion_and_call(bthread_routine fn, bthread_state* state);
@@ -22,17 +27,7 @@ bthread_state bthread2_state = __BTHREAD_UNINITIALIZED;
 bthread_state bthread3_state = __BTHREAD_UNINITIALIZED;
 bthread_state bthread4_state = __BTHREAD_UNINITIALIZED;
 
-void create_cushion_and_call(bthread_routine fn, bthread_state* state)
-{
 
-    char cushion[CUSHION_SIZE];
-
-    cushion[CUSHION_SIZE-1] = cushion[0];
-
-    *state = __BTHREAD_READY;
-
-    fn(NULL);
-}
 
 void* bthread1(void* arg)
 {

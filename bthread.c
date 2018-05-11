@@ -3,7 +3,6 @@
 //
 
 #include "bthread.h"
-#include "bthread_private.h"
 
 #define CUSHION_SIZE 10000
 #define save_context(CONTEXT) setjmp(CONTEXT)
@@ -51,18 +50,18 @@ int bthread_join(bthread_t bthread, void **retval) {
 void bthread_yield(){
     volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
     if (!save_context(scheduler->context)) {
-        __bthread_private * next = tqueue_get_data(tqueue_at_offset(scheduler->current_item, 1));
-
-        if(next->state == __BTHREAD_UNINITIALIZED){
-            bthread_create_cushion(next);
-        }else{
-            restore_context(scheduler->context);
-        }
+        bthread_initialize_next();
+        ///  -------->>    bisogna mettere un if????? o parte subito l'inizializzazione?
+        restore_context(scheduler->context);
     }
 }
 
 void bthread_exit(void *retval){
-
+    volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
+    __bthread_private * thread = tqueue_get_data(scheduler->current_item);
+    thread->state = __BTHREAD_ZOMBIE;
+    thread->retval = retval;
+    bthread_yield();
 }
 
 static void bthread_create_cushion(__bthread_private* t_data){
@@ -73,9 +72,25 @@ static void bthread_create_cushion(__bthread_private* t_data){
 }
 
 static void bthread_initialize_next(){
+    volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
+    __bthread_private * next = tqueue_get_data(tqueue_at_offset(scheduler->current_item, 1));
 
+    if(next->state == __BTHREAD_UNINITIALIZED){
+        bthread_create_cushion(next);
+    }
 }
 
 static int bthread_reap_if_zombie(bthread_t bthread, void **retval){
+    volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
+    __bthread_private * thread = tqueue_get_data(scheduler->current_item);
+    if(thread->state == __BTHREAD_ZOMBIE){
+        thread->state = __BTHREAD_EXITED;
+        if(thread->retval != NULL){
+            ///------------------>      da capire cosa mettere  !!!!
+        }
+        return 1;
+    }else{
+        return 0;
+    }
 
 }
