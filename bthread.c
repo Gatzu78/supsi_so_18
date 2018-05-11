@@ -9,9 +9,6 @@
 #define save_context(CONTEXT) setjmp(CONTEXT)
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
 
-//var di supporto
-
-
 
 
 __bthread_scheduler_private *bthread_get_scheduler() {
@@ -23,8 +20,16 @@ __bthread_scheduler_private *bthread_get_scheduler() {
 }
 
 int bthread_create(bthread_t *bthread, const bthread_attr_t *attr, void *(*start_routine) (void *), void *arg){
-    __bthread_private thread = {bthread, start_routine, arg, __BTHREAD_UNINITIALIZED, attr};
-     tqueue_enqueue(bthread_get_scheduler()->queue,&thread);
+    __bthread_private *  thread = malloc(sizeof((__bthread_private)));
+    thread->tid = bthread;
+    thread->body = start_routine;
+    thread->arg = arg;
+    thread->state = __BTHREAD_UNINITIALIZED;
+    if(attr != NULL){
+        thread->attr = *attr;
+    }
+    volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
+    tqueue_enqueue(scheduler->queue, thread);
 }
 
 int bthread_join(bthread_t bthread, void **retval) {
@@ -44,7 +49,16 @@ int bthread_join(bthread_t bthread, void **retval) {
 }
 
 void bthread_yield(){
+    volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
+    if (!save_context(scheduler->context)) {
+        __bthread_private * next = tqueue_get_data(tqueue_at_offset(scheduler->current_item, 1));
 
+        if(next->state == __BTHREAD_UNINITIALIZED){
+            bthread_create_cushion(next);
+        }else{
+            restore_context(scheduler->context);
+        }
+    }
 }
 
 void bthread_exit(void *retval){
@@ -52,7 +66,10 @@ void bthread_exit(void *retval){
 }
 
 static void bthread_create_cushion(__bthread_private* t_data){
-
+    char cushion[CUSHION_SIZE];
+    cushion[CUSHION_SIZE-1] = cushion[0];
+    t_data->state = __BTHREAD_READY;
+    bthread_exit(t_data->body(t_data->arg));
 }
 
 static void bthread_initialize_next(){
