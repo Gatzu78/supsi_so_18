@@ -8,14 +8,14 @@
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
 
 //var di supporto
-static __bthread_scheduler_private * ourScheduler;
-int isSchedulerInitialized = 0;
+
+
 
 
 __bthread_scheduler_private *bthread_get_scheduler() {
-    if(!isSchedulerInitialized){
+    static __bthread_scheduler_private * ourScheduler = NULL;
+    if(ourScheduler != NULL){
         ourScheduler = malloc(sizeof(__bthread_scheduler_private));
-        isSchedulerInitialized = 1;
     }
     return ourScheduler;
 }
