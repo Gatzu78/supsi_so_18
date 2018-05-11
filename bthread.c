@@ -3,6 +3,8 @@
 //
 
 #include "bthread.h"
+#include "bthread_private.h"
+
 #define CUSHION_SIZE 10000
 #define save_context(CONTEXT) setjmp(CONTEXT)
 #define restore_context(CONTEXT) longjmp(CONTEXT, 1)
@@ -14,7 +16,7 @@
 
 __bthread_scheduler_private *bthread_get_scheduler() {
     static __bthread_scheduler_private * ourScheduler = NULL;
-    if(ourScheduler != NULL){
+    if(ourScheduler == NULL){
         ourScheduler = malloc(sizeof(__bthread_scheduler_private));
     }
     return ourScheduler;
@@ -22,9 +24,7 @@ __bthread_scheduler_private *bthread_get_scheduler() {
 
 int bthread_create(bthread_t *bthread, const bthread_attr_t *attr, void *(*start_routine) (void *), void *arg){
     __bthread_private thread = {bthread, start_routine, arg, __BTHREAD_UNINITIALIZED, attr};
-     ///
-     ///continuare da qui
-     ///
+     tqueue_enqueue(bthread_get_scheduler()->queue,&thread);
 }
 
 int bthread_join(bthread_t bthread, void **retval) {
