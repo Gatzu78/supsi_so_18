@@ -3,18 +3,19 @@
 //
 
 #include "bthread.h"
+#include "bthread_private.h"
 
 __bthread_scheduler_private *bthread_get_scheduler() {
     static __bthread_scheduler_private * ourScheduler = NULL;
     if(ourScheduler == NULL){
         ourScheduler = malloc(sizeof(__bthread_scheduler_private));
+        ((__bthread_scheduler_private*) ourScheduler)->queue = NULL;
     }
     return ourScheduler;
 }
 
 int bthread_create(bthread_t *bthread, const bthread_attr_t *attr, void *(*start_routine) (void *), void *arg){
-    __bthread_private *  thread = malloc(sizeof((__bthread_private)));
-    thread->tid = bthread;
+    __bthread_private *  thread = malloc(sizeof(__bthread_private));
     thread->body = start_routine;
     thread->arg = arg;
     thread->state = __BTHREAD_UNINITIALIZED;
@@ -22,10 +23,13 @@ int bthread_create(bthread_t *bthread, const bthread_attr_t *attr, void *(*start
         thread->attr = *attr;
     }
     volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
-    tqueue_enqueue(scheduler->queue, thread);
+    thread->tid = tqueue_enqueue(&scheduler->queue, thread);
+    *bthread = thread->tid;
+    scheduler->current_item = scheduler->queue;
 }
 
 int bthread_join(bthread_t bthread, void **retval) {
+    printf("join test: %d\n", bthread);
     volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
     if (save_context(scheduler->context) == 0) {
         bthread_initialize_next();
@@ -41,12 +45,13 @@ int bthread_join(bthread_t bthread, void **retval) {
     }
 }
 
-void bthread_yield(){
-    volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
-    if (!save_context(scheduler->context)) {
-        bthread_initialize_next();
-        ///  -------->>    bisogna mettere un if????? o parte subito l'inizializzazione?
-        restore_context(scheduler->context);
+void bthread_yield() {
+    volatile __bthread_scheduler_private *scheduler = bthread_get_scheduler();
+    volatile __bthread_private * thread = tqueue_get_data(scheduler->queue);
+
+    if (!save_context(thread->context)) {
+            bthread_initialize_next();
+            restore_context(thread->context);
     }
 }
 
@@ -76,11 +81,11 @@ static void bthread_initialize_next(){
 
 static int bthread_reap_if_zombie(bthread_t bthread, void **retval){
     volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
-    __bthread_private * thread = tqueue_get_data(scheduler->current_item);
+    __bthread_private * thread = tqueue_at_offset(scheduler->current_item, bthread);
     if(thread->state == __BTHREAD_ZOMBIE){
         thread->state = __BTHREAD_EXITED;
-        if(thread->retval != NULL){
-            ///------------------>      da capire cosa mettere  !!!!
+        if(retval != NULL){
+            *retval = thread->retval;
         }
         return 1;
     }else{
