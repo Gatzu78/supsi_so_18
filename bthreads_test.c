@@ -13,7 +13,8 @@ void* testRoutine1(void* arg)
     for(i=0;i<10;i++) {
 
         printf("BThread1, i=%d\n", i);
-        bthread_yield();
+        //bthread_yield();
+        bthread_printf("");
     }
 }
 
@@ -24,8 +25,8 @@ void* testRoutine2(void* arg)
     for(i=0;i<10;i++) {
 
         printf("BThread2, i=%d\n", i);
-        bthread_yield();
-
+        //bthread_yield();
+        bthread_printf("");
     }
 }
 
