@@ -29,7 +29,6 @@ int bthread_create(bthread_t *bthread, const bthread_attr_t *attr, void *(*start
 }
 
 int bthread_join(bthread_t bthread, void **retval) {
-    printf("join test: %d\n", bthread);
     volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
     if (save_context(scheduler->context) == 0) {
         bthread_initialize_next();
@@ -47,11 +46,11 @@ int bthread_join(bthread_t bthread, void **retval) {
 
 void bthread_yield() {
     volatile __bthread_scheduler_private *scheduler = bthread_get_scheduler();
-    volatile __bthread_private * thread = tqueue_get_data(scheduler->queue);
+    volatile __bthread_private * thread = tqueue_get_data(scheduler->current_item);
 
     if (!save_context(thread->context)) {
             bthread_initialize_next();
-            restore_context(thread->context);
+            restore_context(scheduler->context);
     }
 }
 
@@ -72,16 +71,18 @@ static void bthread_create_cushion(__bthread_private* t_data){
 
 static void bthread_initialize_next(){
     volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
-    __bthread_private * next = tqueue_get_data(tqueue_at_offset(scheduler->current_item, 1));
+    volatile TQueue next = tqueue_at_offset(scheduler->current_item, 1);
+    volatile __bthread_private * nextThread = tqueue_get_data(next);
 
-    if(next->state == __BTHREAD_UNINITIALIZED){
-        bthread_create_cushion(next);
+    if(nextThread->state == __BTHREAD_UNINITIALIZED){
+        scheduler->current_item = next;
+        bthread_create_cushion(nextThread);
     }
 }
 
 static int bthread_reap_if_zombie(bthread_t bthread, void **retval){
     volatile __bthread_scheduler_private* scheduler = bthread_get_scheduler();
-    __bthread_private * thread = tqueue_at_offset(scheduler->current_item, bthread);
+    __bthread_private * thread = tqueue_get_data(scheduler->current_item);
     if(thread->state == __BTHREAD_ZOMBIE){
         thread->state = __BTHREAD_EXITED;
         if(retval != NULL){
@@ -91,5 +92,9 @@ static int bthread_reap_if_zombie(bthread_t bthread, void **retval){
     }else{
         return 0;
     }
+
+}
+
+void bthread_cleanup(){
 
 }
